@@ -176,3 +176,127 @@ public class OpaClient {
 * Check the result from OPA's response and print "Access granted" or "Access denied" based on the decision.
 
 This example demonstrates how to interact with OPA's REST API from a Java application, making it straightforward to integrate OPA for policy evaluations in your services.
+
+
+### Evaluating specific policy (by package name)
+
+To ensure that Open Policy Agent (OPA) evaluates only the applicable policies, you can specify the relevant policy or policies for a particular use case by organizing your policies into distinct packages and using the appropriate API endpoints to query them. Here’s how you can achieve this:
+
+### Organizing Policies
+
+1. **Packages** : In Rego, policies are organized into packages. You can define different packages for different use cases.
+2. **Policy Files** : Store policies in separate files and use logical naming conventions to ensure clarity and maintainability.
+
+### Example Policies
+
+#### Transfer Policy (transfer_policy.rego)
+
+<pre><div class="dark bg-gray-950 rounded-md border-[0.5px] border-token-border-medium"><div class="flex items-center relative text-token-text-secondary bg-token-main-surface-secondary px-4 py-2 text-xs font-sans justify-between rounded-t-md"><span>rego</span><div class="flex items-center"><span class="" data-state="closed"><button class="flex gap-1 items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="icon-sm"><path fill="currentColor" fill-rule="evenodd" d="M7 5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-2v2a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9a3 3 0 0 1 3-3h2zm2 2h5a3 3 0 0 1 3 3v5h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1zM5 9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1z" clip-rule="evenodd"></path></svg>Copy code</button></span></div></div><div class="overflow-y-auto p-4 text-left undefined" dir="ltr"><code class="!whitespace-pre hljs language-rego">package finance.transfer
+
+default allow = false
+
+allow {
+    input.action == "transfer"
+    input.amount <= data.accounts[input.user].balance
+}
+</code></div></div></pre>
+
+#### Withdrawal Policy (withdrawal_policy.rego)
+
+<pre><div class="dark bg-gray-950 rounded-md border-[0.5px] border-token-border-medium"><div class="flex items-center relative text-token-text-secondary bg-token-main-surface-secondary px-4 py-2 text-xs font-sans justify-between rounded-t-md"><span>rego</span><div class="flex items-center"><span class="" data-state="closed"><button class="flex gap-1 items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="icon-sm"><path fill="currentColor" fill-rule="evenodd" d="M7 5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-2v2a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9a3 3 0 0 1 3-3h2zm2 2h5a3 3 0 0 1 3 3v5h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1zM5 9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1z" clip-rule="evenodd"></path></svg>Copy code</button></span></div></div><div class="overflow-y-auto p-4 text-left undefined" dir="ltr"><code class="!whitespace-pre hljs language-rego">package finance.withdrawal
+
+default allow = false
+
+allow {
+    input.action == "withdraw"
+    input.amount <= data.accounts[input.user].balance
+}
+</code></div></div></pre>
+
+### Loading Policies
+
+Load these policies into OPA using the REST API. You can load each policy into its own namespace.
+
+<pre><div class="dark bg-gray-950 rounded-md border-[0.5px] border-token-border-medium"><div class="flex items-center relative text-token-text-secondary bg-token-main-surface-secondary px-4 py-2 text-xs font-sans justify-between rounded-t-md"><span>bash</span><div class="flex items-center"><span class="" data-state="closed"><button class="flex gap-1 items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="icon-sm"><path fill="currentColor" fill-rule="evenodd" d="M7 5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-2v2a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9a3 3 0 0 1 3-3h2zm2 2h5a3 3 0 0 1 3 3v5h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1zM5 9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1z" clip-rule="evenodd"></path></svg>Copy code</button></span></div></div><div class="overflow-y-auto p-4 text-left undefined" dir="ltr"><code class="!whitespace-pre hljs language-bash"># Load transfer policy
+curl -X PUT --data-binary @transfer_policy.rego http://localhost:8181/v1/policies/finance/transfer
+
+# Load withdrawal policy
+curl -X PUT --data-binary @withdrawal_policy.rego http://localhost:8181/v1/policies/finance/withdrawal
+</code></div></div></pre>
+
+### Querying Specific Policies
+
+When you need to evaluate a specific policy, you can call the appropriate endpoint. This way, OPA evaluates only the policy you intend to use for the specific action.
+
+#### Java Example
+
+Here's how you can explicitly call a specific policy for the transfer use case:
+
+<pre><div class="dark bg-gray-950 rounded-md border-[0.5px] border-token-border-medium"><div class="flex items-center relative text-token-text-secondary bg-token-main-surface-secondary px-4 py-2 text-xs font-sans justify-between rounded-t-md"><span>java</span><div class="flex items-center"><span class="" data-state="closed"><button class="flex gap-1 items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="icon-sm"><path fill="currentColor" fill-rule="evenodd" d="M7 5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-2v2a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9a3 3 0 0 1 3-3h2zm2 2h5a3 3 0 0 1 3 3v5h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1zM5 9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1z" clip-rule="evenodd"></path></svg>Copy code</button></span></div></div><div class="overflow-y-auto p-4 text-left undefined" dir="ltr"><code class="!whitespace-pre hljs language-java">import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class TransferService {
+
+    private static final String OPA_TRANSFER_URL = "http://localhost:8181/v1/data/finance/transfer/allow";
+
+    public static void main(String[] args) {
+        String user = "alice";
+        double amount = 500;
+
+        if (isTransferAllowed(user, amount)) {
+            // Proceed with transfer
+            System.out.println("Transfer allowed. Executing transfer...");
+            executeTransfer(user, "bob", amount);
+        } else {
+            // Deny transfer
+            System.out.println("Transfer denied due to insufficient balance.");
+        }
+    }
+
+    private static boolean isTransferAllowed(String user, double amount) {
+        RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        Map<String, Object> input = new HashMap<>();
+        input.put("action", "transfer");
+        input.put("user", user);
+        input.put("amount", amount);
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("input", input);
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
+
+            ResponseEntity<JsonNode> response = restTemplate.exchange(OPA_TRANSFER_URL, HttpMethod.POST, entity, JsonNode.class);
+            JsonNode result = response.getBody();
+
+            return result != null && result.get("result").asBoolean();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static void executeTransfer(String fromUser, String toUser, double amount) {
+        // Implement the logic to transfer the amount from fromUser to toUser
+        System.out.println("Transferred $" + amount + " from " + fromUser + " to " + toUser);
+    }
+}
+</code></div></div></pre>
+
+### Conclusion
+
+By organizing policies into packages and querying specific endpoints, you can ensure that OPA evaluates only the applicable policies for a given use case. This approach enhances the performance and maintainability of your policy enforcement mechanism. The above example demonstrates how to structure your policies and make explicit calls to evaluate them before executing user requests, ensuring that the correct policies are applied efficiently.
