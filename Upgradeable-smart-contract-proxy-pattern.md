@@ -1,3 +1,4 @@
+## Upgradeable Smart Contracts Overview
 Since smart contracts on blockchain platforms like Ethereum are immutable by default, implementing a robust upgrade strategy is essential to ensure continued functionality, security, and the preservation of data.
 Upgrading a smart contract after deployment is sometimes needed to support new requirements for applications & token contracts like those based on the ERC1400 standard. 
 
