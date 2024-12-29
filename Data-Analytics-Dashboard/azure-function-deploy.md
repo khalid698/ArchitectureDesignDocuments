@@ -32,10 +32,65 @@ mvn archetype:generate -DgroupId=com.example -DartifactId=PollAndPublishFunction
 
 cd PollAndPublishFunction
 ```
+---
+
+### **2. Java Azure Function Implementation**
+```Java
+
+package com.example;
+
+import com.microsoft.azure.functions.annotation.*;
+import com.microsoft.azure.functions.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+
+public class PollAndPublishFunction {
+    @FunctionName("PollAndPublish")
+    public void run(
+        @TimerTrigger(name = "timerInfo", schedule = "*/10 * * * * *") String timerInfo,
+        @EventHubOutput(name = "eventOutput", eventHubName = "your-event-hub-name", connection = "EventHubConnection") OutputBinding<String> outputEvent,
+        final ExecutionContext context
+    ) {
+        try {
+            // Create URL object
+            URL url = new URL("https://api.adviceslip.com/advice");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            // Get response code
+            int status = con.getResponseCode();
+            context.getLogger().info("Response Code: " + status);
+
+            // Read response
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
+            String inputLine;
+            StringBuilder content = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+
+            // Close connections
+            in.close();
+            con.disconnect();
+
+            // Set the Event Hub output
+            outputEvent.setValue(content.toString());
+            context.getLogger().info("Published to Event Hub: " + content.toString());
+        } catch (Exception e) {
+            context.getLogger().severe("Error fetching or publishing data: " + e.getMessage());
+        }
+    }
+}
+
+
+```
 
 ---
 
-### **2. Update `pom.xml`**
+### **3. Update `pom.xml`**
 
 Ensure your `pom.xml` includes the necessary dependencies and Azure Functions Maven plugin.
 
@@ -87,7 +142,7 @@ Ensure your `pom.xml` includes the necessary dependencies and Azure Functions Ma
 
 ---
 
-### **3. Configure `local.settings.json`**
+### **4. Configure `local.settings.json`**
 
 Set up your local settings for development and testing.
 
@@ -110,7 +165,7 @@ Create a `local.settings.json` file in the `src/main/resources` directory:
 
 ---
 
-### **4. Create Azure Resources**
+### **5. Create Azure Resources**
 
 Use Azure CLI to create necessary resources.
 
@@ -149,7 +204,7 @@ EVENTHUB_CONNECTION=$(az eventhubs namespace authorization-rule keys list --reso
 
 ---
 
-### **5. Update `local.settings.json` with Connection String**
+### **6. Update `local.settings.json` with Connection String**
 
 Update the `EventHubConnection` in `local.settings.json` with the obtained connection string.
 
@@ -166,7 +221,7 @@ Update the `EventHubConnection` in `local.settings.json` with the obtained conne
 
 ---
 
-### **6. Build the Project**
+### **7. Build the Project**
 
 Compile your project using Maven.
 
@@ -176,7 +231,7 @@ mvn clean package
 
 ---
 
-### **7. Deploy the Function to Azure**
+### **8. Deploy the Function to Azure**
 
 Use the Azure Functions Maven plugin to deploy.
 
@@ -190,7 +245,7 @@ mvn azure-functions:deploy
 
 ---
 
-### **8. Verify Deployment**
+### **9. Verify Deployment**
 
 1. **Check Function App in Azure Portal**
    - Navigate to the [Azure Portal](https://portal.azure.com/).
@@ -206,7 +261,7 @@ mvn azure-functions:deploy
 
 ---
 
-### **9. Configure Production Settings**
+### **10. Configure Production Settings**
 
 1. **Update `pom.xml` for Production**
    - Ensure all production configurations (resource group, app name, region) are correctly set.
@@ -222,7 +277,7 @@ mvn azure-functions:deploy
 
 ---
 
-### **10. Secure Your Function**
+### **11. Secure Your Function**
 
 1. **Use Managed Identity (Optional)**
    - Enable **Managed Identity** for your Function App.
