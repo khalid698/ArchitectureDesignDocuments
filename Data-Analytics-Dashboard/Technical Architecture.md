@@ -232,3 +232,5 @@ By following this architectural blueprint, you can build a robust, scalable, and
 
 
 ![1735441489158](1735441489158.png)
+
+![1735441489158](az-resources.png)
