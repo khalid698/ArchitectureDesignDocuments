@@ -296,4 +296,310 @@ public class SwiftApiController {
 - Add more advanced error handling with custom exception classes.
 - Secure API access with Spring Security.
 
-Would you like me to extend this further with automated tests or OAuth token management? 🚀
+---
+### Update version with specific DTOs
+
+```
+package com.bankofengland.rtgs;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+public class RtgsAccountsApiClient {
+
+    private final WebClient webClient;
+
+    public RtgsAccountsApiClient(@Value("${rtgs.api.baseUrl}") String baseUrl, WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.baseUrl(baseUrl).build();
+    }
+
+    public AccountSingleResponse getSingleAccount(String accountId, String userContext, String journeyId,
+                                                    String forwardedHost, String forwardedPath) throws ApiException {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/accounts/{accountId}").build(accountId))
+                .headers(headers -> {
+                    if (userContext != null) headers.add("x-userContext", userContext);
+                    if (journeyId != null) headers.add("x-journeyId", journeyId);
+                    if (forwardedHost != null) headers.add("X-Forwarded-Host", forwardedHost);
+                    if (forwardedPath != null) headers.add("X-Forwarded-Path", forwardedPath);
+                })
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(),
+                        response -> response.bodyToMono(APIErrorResponseWrapperDTO.class)
+                                .flatMap(error -> Mono.error(new ApiException("Error retrieving account: " + error))))
+                .bodyToMono(AccountSingleResponse.class)
+                .block();
+    }
+
+    public AccountBalanceAllocationResponseList getAccountBalanceAllocations(String accountId,
+                                                                             String balanceAllocationSuffix,
+                                                                             String balanceAllocationName,
+                                                                             Double negativeBalance,
+                                                                             Double currentBalance,
+                                                                             Double availableBalance,
+                                                                             String balanceAllocationStatusCode,
+                                                                             String balanceAllocationTypeCode,
+                                                                             String variant,
+                                                                             Integer limit,
+                                                                             Integer offset,
+                                                                             String sort,
+                                                                             String userContext,
+                                                                             String journeyId,
+                                                                             String forwardedHost,
+                                                                             String forwardedPath) throws ApiException {
+        return webClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/accounts/{accountId}/balanceAllocations");
+                    if (balanceAllocationSuffix != null)
+                        uriBuilder.queryParam("balanceAllocationSuffix", balanceAllocationSuffix);
+                    if (balanceAllocationName != null)
+                        uriBuilder.queryParam("balanceAllocationName", balanceAllocationName);
+                    if (negativeBalance != null)
+                        uriBuilder.queryParam("negativeBalance", negativeBalance);
+                    if (currentBalance != null)
+                        uriBuilder.queryParam("currentBalance", currentBalance);
+                    if (availableBalance != null)
+                        uriBuilder.queryParam("availableBalance", availableBalance);
+                    if (balanceAllocationStatusCode != null)
+                        uriBuilder.queryParam("balanceAllocationStatusCode", balanceAllocationStatusCode);
+                    if (balanceAllocationTypeCode != null)
+                        uriBuilder.queryParam("balanceAllocationTypeCode", balanceAllocationTypeCode);
+                    if (variant != null)
+                        uriBuilder.queryParam("variant", variant);
+                    if (limit != null)
+                        uriBuilder.queryParam("limit", limit);
+                    if (offset != null)
+                        uriBuilder.queryParam("offset", offset);
+                    if (sort != null)
+                        uriBuilder.queryParam("sort", sort);
+                    return uriBuilder.build(accountId);
+                })
+                .headers(headers -> {
+                    if (userContext != null) headers.add("x-userContext", userContext);
+                    if (journeyId != null) headers.add("x-journeyId", journeyId);
+                    if (forwardedHost != null) headers.add("X-Forwarded-Host", forwardedHost);
+                    if (forwardedPath != null) headers.add("X-Forwarded-Path", forwardedPath);
+                })
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(),
+                        response -> response.bodyToMono(APIErrorResponseWrapperDTO.class)
+                                .flatMap(error -> Mono.error(new ApiException("Error retrieving balance allocations: " + error))))
+                .bodyToMono(AccountBalanceAllocationResponseList.class)
+                .block();
+    }
+
+    public AccountResponseList getAccounts(String participantId, String schemeCode, String accountStatusCode,
+                                             String accountBookCode, String accountTypeCode, String accountSubTypeCode,
+                                             String accountNumber, String transactionSubTypeCode, Integer limit,
+                                             Integer offset, String sort, String userContext, String journeyId,
+                                             String forwardedHost, String forwardedPath) throws ApiException {
+        return webClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/accounts");
+                    if (participantId != null)
+                        uriBuilder.queryParam("participantId", participantId);
+                    if (schemeCode != null)
+                        uriBuilder.queryParam("schemeCode", schemeCode);
+                    if (accountStatusCode != null)
+                        uriBuilder.queryParam("accountStatusCode", accountStatusCode);
+                    if (accountBookCode != null)
+                        uriBuilder.queryParam("accountBookCode", accountBookCode);
+                    if (accountTypeCode != null)
+                        uriBuilder.queryParam("accountTypeCode", accountTypeCode);
+                    if (accountSubTypeCode != null)
+                        uriBuilder.queryParam("accountSubTypeCode", accountSubTypeCode);
+                    if (accountNumber != null)
+                        uriBuilder.queryParam("accountNumber", accountNumber);
+                    if (transactionSubTypeCode != null)
+                        uriBuilder.queryParam("transactionSubTypeCode", transactionSubTypeCode);
+                    if (limit != null)
+                        uriBuilder.queryParam("limit", limit);
+                    if (offset != null)
+                        uriBuilder.queryParam("offset", offset);
+                    if (sort != null)
+                        uriBuilder.queryParam("sort", sort);
+                    return uriBuilder.build();
+                })
+                .headers(headers -> {
+                    if (userContext != null) headers.add("x-userContext", userContext);
+                    if (journeyId != null) headers.add("x-journeyId", journeyId);
+                    if (forwardedHost != null) headers.add("X-Forwarded-Host", forwardedHost);
+                    if (forwardedPath != null) headers.add("X-Forwarded-Path", forwardedPath);
+                })
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(),
+                        response -> response.bodyToMono(APIErrorResponseWrapperDTO.class)
+                                .flatMap(error -> Mono.error(new ApiException("Error retrieving accounts: " + error))))
+                .bodyToMono(AccountResponseList.class)
+                .block();
+    }
+
+    public AccountReportResponseList getAccountReports(String accountId, String reportTypeCode, String valueDate,
+                                                         Integer limit, Integer offset, String sort,
+                                                         String userContext, String journeyId,
+                                                         String forwardedHost, String forwardedPath) throws ApiException {
+        return webClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/accounts/{accountId}/reports");
+                    if (reportTypeCode != null)
+                        uriBuilder.queryParam("reportTypeCode", reportTypeCode);
+                    if (valueDate != null)
+                        uriBuilder.queryParam("valueDate", valueDate);
+                    if (limit != null)
+                        uriBuilder.queryParam("limit", limit);
+                    if (offset != null)
+                        uriBuilder.queryParam("offset", offset);
+                    if (sort != null)
+                        uriBuilder.queryParam("sort", sort);
+                    return uriBuilder.build(accountId);
+                })
+                .headers(headers -> {
+                    if (userContext != null) headers.add("x-userContext", userContext);
+                    if (journeyId != null) headers.add("x-journeyId", journeyId);
+                    if (forwardedHost != null) headers.add("X-Forwarded-Host", forwardedHost);
+                    if (forwardedPath != null) headers.add("X-Forwarded-Path", forwardedPath);
+                })
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(),
+                        response -> response.bodyToMono(APIErrorResponseWrapperDTO.class)
+                                .flatMap(error -> Mono.error(new ApiException("Error retrieving account reports: " + error))))
+                .bodyToMono(AccountReportResponseList.class)
+                .block();
+    }
+
+    public AccountReport getSingleAccountReport(String accountId, String reportId, String userContext,
+                                                  String journeyId, String forwardedHost, String forwardedPath) throws ApiException {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/accounts/{accountId}/reports/{reportId}").build(accountId, reportId))
+                .headers(headers -> {
+                    if (userContext != null) headers.add("x-userContext", userContext);
+                    if (journeyId != null) headers.add("x-journeyId", journeyId);
+                    if (forwardedHost != null) headers.add("X-Forwarded-Host", forwardedHost);
+                    if (forwardedPath != null) headers.add("X-Forwarded-Path", forwardedPath);
+                })
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(),
+                        response -> response.bodyToMono(APIErrorResponseWrapperDTO.class)
+                                .flatMap(error -> Mono.error(new ApiException("Error retrieving account report: " + error))))
+                .bodyToMono(AccountReport.class)
+                .block();
+    }
+
+    public static class AccountSingleResponse {
+        private String accountId;
+        private String accountName;
+        private String accountStatus;
+        private BigDecimal currentBalance;
+
+        public String getAccountId() { return accountId; }
+        public void setAccountId(String accountId) { this.accountId = accountId; }
+        public String getAccountName() { return accountName; }
+        public void setAccountName(String accountName) { this.accountName = accountName; }
+        public String getAccountStatus() { return accountStatus; }
+        public void setAccountStatus(String accountStatus) { this.accountStatus = accountStatus; }
+        public BigDecimal getCurrentBalance() { return currentBalance; }
+        public void setCurrentBalance(BigDecimal currentBalance) { this.currentBalance = currentBalance; }
+
+        @Override
+        public String toString() {
+            return "AccountSingleResponse{accountId='" + accountId + "', accountName='" + accountName +
+                    "', accountStatus='" + accountStatus + "', currentBalance=" + currentBalance + "}";
+        }
+    }
+
+    public static class AccountBalanceAllocationResponseList {
+        private List<BalanceAllocation> allocations;
+        public List<BalanceAllocation> getAllocations() { return allocations; }
+        public void setAllocations(List<BalanceAllocation> allocations) { this.allocations = allocations; }
+    }
+
+    public static class BalanceAllocation {
+        private String balanceAllocationId;
+        private String balanceAllocationSuffix;
+        private BigDecimal currentBalance;
+        private BigDecimal availableBalance;
+        public String getBalanceAllocationId() { return balanceAllocationId; }
+        public void setBalanceAllocationId(String balanceAllocationId) { this.balanceAllocationId = balanceAllocationId; }
+        public String getBalanceAllocationSuffix() { return balanceAllocationSuffix; }
+        public void setBalanceAllocationSuffix(String balanceAllocationSuffix) { this.balanceAllocationSuffix = balanceAllocationSuffix; }
+        public BigDecimal getCurrentBalance() { return currentBalance; }
+        public void setCurrentBalance(BigDecimal currentBalance) { this.currentBalance = currentBalance; }
+        public BigDecimal getAvailableBalance() { return availableBalance; }
+        public void setAvailableBalance(BigDecimal availableBalance) { this.availableBalance = availableBalance; }
+    }
+
+    public static class AccountResponseList {
+        private List<AccountSingleResponse> accounts;
+        public List<AccountSingleResponse> getAccounts() { return accounts; }
+        public void setAccounts(List<AccountSingleResponse> accounts) { this.accounts = accounts; }
+    }
+
+    public static class AccountReportResponseList {
+        private List<AccountReport> reports;
+        public List<AccountReport> getReports() { return reports; }
+        public void setReports(List<AccountReport> reports) { this.reports = reports; }
+    }
+
+    public static class AccountReport {
+        private String reportId;
+        private String reportTypeCode;
+        private String reportCreatedAt;
+        public String getReportId() { return reportId; }
+        public void setReportId(String reportId) { this.reportId = reportId; }
+        public String getReportTypeCode() { return reportTypeCode; }
+        public void setReportTypeCode(String reportTypeCode) { this.reportTypeCode = reportTypeCode; }
+        public String getReportCreatedAt() { return reportCreatedAt; }
+        public void setReportCreatedAt(String reportCreatedAt) { this.reportCreatedAt = reportCreatedAt; }
+    }
+
+    public static class APIErrorResponseWrapperDTO {
+        private APIError error;
+        public APIError getError() { return error; }
+        public void setError(APIError error) { this.error = error; }
+        @Override
+        public String toString() { return "APIErrorResponseWrapperDTO{error=" + error + "}"; }
+    }
+
+    public static class APIError {
+        private String status;
+        private String id;
+        private String detail;
+        private List<APIErrorDetail> errors;
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getDetail() { return detail; }
+        public void setDetail(String detail) { this.detail = detail; }
+        public List<APIErrorDetail> getErrors() { return errors; }
+        public void setErrors(List<APIErrorDetail> errors) { this.errors = errors; }
+        @Override
+        public String toString() {
+            return "APIError{status='" + status + "', id='" + id + "', detail='" + detail + "', errors=" + errors + "}";
+        }
+    }
+
+    public static class APIErrorDetail {
+        private String errorCode;
+        private String detail;
+        public String getErrorCode() { return errorCode; }
+        public void setErrorCode(String errorCode) { this.errorCode = errorCode; }
+        public String getDetail() { return detail; }
+        public void setDetail(String detail) { this.detail = detail; }
+        @Override
+        public String toString() {
+            return "APIErrorDetail{errorCode='" + errorCode + "', detail='" + detail + "'}";
+        }
+    }
+
+    public static class ApiException extends Exception {
+        public ApiException(String message) { super(message); }
+        public ApiException(String message, Throwable cause) { super(message, cause); }
+    }
+}
+```
